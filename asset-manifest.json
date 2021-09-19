@@ -1,20 +1,20 @@
 {
   "files": {
     "main.css": "/tfjs-yolov5-example/static/css/main.6e17226d.chunk.css",
-    "main.js": "/tfjs-yolov5-example/static/js/main.0afa500d.chunk.js",
-    "main.js.map": "/tfjs-yolov5-example/static/js/main.0afa500d.chunk.js.map",
+    "main.js": "/tfjs-yolov5-example/static/js/main.b6d4449c.chunk.js",
+    "main.js.map": "/tfjs-yolov5-example/static/js/main.b6d4449c.chunk.js.map",
     "runtime-main.js": "/tfjs-yolov5-example/static/js/runtime-main.5c924bd3.js",
     "runtime-main.js.map": "/tfjs-yolov5-example/static/js/runtime-main.5c924bd3.js.map",
-    "static/js/2.a58e9417.chunk.js": "/tfjs-yolov5-example/static/js/2.a58e9417.chunk.js",
-    "static/js/2.a58e9417.chunk.js.map": "/tfjs-yolov5-example/static/js/2.a58e9417.chunk.js.map",
+    "static/js/2.70b95e11.chunk.js": "/tfjs-yolov5-example/static/js/2.70b95e11.chunk.js",
+    "static/js/2.70b95e11.chunk.js.map": "/tfjs-yolov5-example/static/js/2.70b95e11.chunk.js.map",
     "index.html": "/tfjs-yolov5-example/index.html",
     "static/css/main.6e17226d.chunk.css.map": "/tfjs-yolov5-example/static/css/main.6e17226d.chunk.css.map",
-    "static/js/2.a58e9417.chunk.js.LICENSE.txt": "/tfjs-yolov5-example/static/js/2.a58e9417.chunk.js.LICENSE.txt"
+    "static/js/2.70b95e11.chunk.js.LICENSE.txt": "/tfjs-yolov5-example/static/js/2.70b95e11.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.5c924bd3.js",
-    "static/js/2.a58e9417.chunk.js",
+    "static/js/2.70b95e11.chunk.js",
     "static/css/main.6e17226d.chunk.css",
-    "static/js/main.0afa500d.chunk.js"
+    "static/js/main.b6d4449c.chunk.js"
   ]
 }
