@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import MagicDropzone from 'react-magic-dropzone';
 
 import './styles.css';
-// import { setWasmPaths } from '@tensorflow/tfjs-backend-wasm';
-// setWasmPaths('./tfjs-yolov5-example/');
 const tf = require('@tensorflow/tfjs');
 
 const weights = `${process.env.PUBLIC_URL}/web_model/model.json`;
@@ -31,6 +29,16 @@ const names = [
 
 const [modelWeight, modelHeight] = [416, 416];
 
+const colorByType = {
+  w: 'rgba(13, 112, 239, 1)',
+  m: 'rgba(59, 64, 61, 1)',
+  f: 'rgba(70, 86, 50, 1)',
+  c: 'rgba(222, 191, 57, 1)',
+  g: 'rgba(130, 188, 68, 1)',
+  s: 'rgba(134, 126, 92, 1)',
+  castle: 'rgba(156, 156, 156, 1)',
+};
+
 class App extends React.Component {
   state = {
     model: null,
@@ -39,8 +47,8 @@ class App extends React.Component {
   };
 
   async componentDidMount() {
-    // await tf.setBackend('wasm');
-    // await tf.ready();
+    await tf.ready();
+    await tf.setBackend('webgl');
     tf.loadGraphModel(weights).then((model) => {
       console.log({ model });
       this.setState({
@@ -56,9 +64,6 @@ class App extends React.Component {
   cropToCanvas = (image, canvas, ctx) => {
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;
-
-    // canvas.width = image.width;
-    // canvas.height = image.height;
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.fillStyle = '#000000';
@@ -94,16 +99,6 @@ class App extends React.Component {
 
     const maxNumBoxes = 49;
     const minScore = 0.5;
-
-    const colorByType = {
-      w: 'rgba(13, 112, 239, 0.6)',
-      m: 'rgba(59, 64, 61, 0.6)',
-      f: 'rgba(70, 86, 50, 0.6)',
-      c: 'rgba(222, 191, 57, 0.6)',
-      g: 'rgba(130, 188, 68, 0.6)',
-      s: 'rgba(134, 126, 92, 0.6)',
-      castle: 'rgba(128, 128, 128, 0.6)',
-    };
 
     const before = performance.now();
     this.state.model.executeAsync(input).then((res) => {
@@ -149,8 +144,8 @@ class App extends React.Component {
 
         const name = names[classes[i]];
         return {
-          type: name.match(/^[a-z]+/)?.[0],
-          crowns: Number(name.match(/\d+$/)?.[0] || 0),
+          type: name?.match(/^[a-z]+/)?.[0],
+          crowns: Number(name?.match(/\d+$/)?.[0] || 0),
           x1,
           y1,
           x2,
@@ -253,9 +248,10 @@ class App extends React.Component {
         ) {
           const visitedKey = getVisitedKey(x, y);
           if (!visited[visitedKey] && map[y][x]?.type === type) {
-            region.crowns += map[y][x].crowns;
+            region.crowns += map[y]?.[x]?.crowns || 0;
             region.tiles.push(map[y][x]);
             region.type = type;
+            region.score = region.crowns * region.tiles.length;
             visited[visitedKey] = true;
 
             if (x > 0) getRegion(map, type, x - 1, y, visited, region);
@@ -274,10 +270,12 @@ class App extends React.Component {
           )
           .filter(Boolean);
 
-        console.log({
-          regions,
-          normalizedMap,
-        });
+        castle.isSquare = normalizedMap.every(
+          (row, _, rows) => row.length === rows.length
+        );
+
+        castle.isInTheMiddle =
+          castle.x === (w - 1) / 2 && castle.y === (h - 1) / 2;
 
         regions.forEach((region, regionIndex) => {
           ctx.strokeStyle = colorByType[region.tiles[0].type];
@@ -300,7 +298,7 @@ class App extends React.Component {
           do {
             for (let dCorner = 0; dCorner < 4; dCorner++) {
               i++;
-              const { x1, y1, x2, y2 } = normalizedMap[y]?.[x];
+              const { x1, y1, x2, y2 } = normalizedMap[y]?.[x] || {};
 
               if (corner === 0) {
                 path.lineTo(x1 * c.width, y2 * c.height);
@@ -374,7 +372,9 @@ class App extends React.Component {
           );
 
           path.closePath();
+          ctx.globalAlpha = 0.6;
           ctx.fill(path, 'nonzero');
+          ctx.globalAlpha = 1;
 
           ctx.shadowColor = 'black';
           ctx.shadowBlur = 3;
@@ -405,68 +405,39 @@ class App extends React.Component {
               c.height * region.tiles[0].ym + fh * 1.3
             );
           }
+          if (type === 'castle') {
+            ctx.fillText(
+              `${castle.isInTheMiddle ? 10 : '❌'} ❇️`,
+              c.width * region.tiles[0].x2 - fh / 1.3,
+              c.height * region.tiles[0].ym - fh * 1.3
+            );
+
+            ctx.fillText(
+              `+ ${castle.isSquare ? 5 : '❌'} 🔲`,
+              c.width * region.tiles[0].x2 - fh / 1.3,
+              c.height * region.tiles[0].ym
+            );
+
+            ctx.fillText(
+              `= ${
+                (castle.isInTheMiddle ? 10 : 0) + (castle.isSquare ? 5 : 0)
+              } #️⃣`,
+              c.width * region.tiles[0].x2 - fh / 1.3,
+              c.height * region.tiles[0].ym + fh * 1.3
+            );
+          }
 
           ctx.shadowBlur = 0;
         });
 
-        // regions.forEach((region) => {
-        //   region.tiles.forEach((tile, tileIndex, tiles) => {
-        //     const colorByType = {
-        //       w: '#0D70EF',
-        //       m: '#3B403D',
-        //       f: '#465632',
-        //       c: '#DEBF39',
-        //       g: '#82BC44',
-        //       s: '#867E5C',
-        //     };
-
-        //     ctx.strokeStyle = colorByType[tile.type];
-        //     ctx.lineWidth = 4;
-
-        //     console.log('regiontile', { region, tile });
-
-        //     [
-        //       [1, 0],
-        //       [0, 1],
-        //       [-1, 0],
-        //       [0, -1],
-        //     ].forEach(([dx, dy]) => {
-        //       console.log(
-        //         'cmp',
-        //         normalizedMap[tile.y + dy]?.[tile.x + dx]?.type,
-        //         tile.type
-        //       );
-        //       if (
-        //         normalizedMap[tile.y + dy]?.[tile.x + dx]?.type !== tile.type
-        //       ) {
-        //         ctx.beginPath();
-        //         ctx.moveTo(
-        //           dx == 1 ? tile.x2 * c.width : tile.x1 * c.width,
-        //           dy == 1 ? tile.y2 * c.width : tile.y1 * c.width
-        //         );
-        //         ctx.lineTo(
-        //           dx == -1 ? tile.x1 * c.width : tile.x2 * c.width,
-        //           dy == -1 ? tile.y1 * c.width : tile.y2 * c.width
-        //         );
-        //         ctx.stroke();
-        //         console.log('strokey', tile, dx, dy);
-        //       }
-        //     });
-
-        //     // if (tileIndex === tiles.length - 1) ctx.stroke();
-        //   });
-        // });
-
-        // for (let y = 0; y < h; y++) {
-        //   for (let x = 0; x < w; x++) {
-        //     const visitedKey = getVisitedKey(x, y);
-        //     if (visited[visitedKey]) continue;
-        //     visited[visitedKey] = true;
-
-        //     const tile = normalizedMap[y][x];
-        //     if (!tile) continue;
-        //   }
-        // }
+        this.setState({
+          regions,
+          map: normalizedMap,
+          score:
+            regions.reduce((sum, region) => sum + region.score, 0) +
+            (castle.isInTheMiddle ? 10 : 0) +
+            (castle.isSquare ? 5 : 0),
+        });
       }
       console.log({ castleIndex, map, sortedMatches });
     });
@@ -506,9 +477,10 @@ class App extends React.Component {
             <div
               style={{
                 position: 'relative',
+                textAlign: 'center',
               }}
             >
-              {normalizedMap.flat().map((tile) => {
+              {this.state?.map?.flat().map((tile) => {
                 const tileWidth = 20;
                 return (
                   <div
@@ -519,12 +491,29 @@ class App extends React.Component {
                       position: 'absolute',
                       left: tileWidth * tile.x,
                       top: tileWidth * tile.y,
+                      // textAlign: 'center',
+                      fontSize: 16,
+                      lineHeight: '20px',
+                      textShadow: '0 0 2px rgba(0, 0, 0, 0.6)',
                     }}
-                  />
+                  >
+                    {new Array(tile.crowns ? 1 : 0).fill('👑')}
+                  </div>
                 );
               })}
+              <div
+                style={{
+                  fontSize: 20 * (this.state?.map?.length - 1),
+                  lineHeight: `${20 * this.state?.map?.length}px`,
+                  width: 20 * this.state?.map?.length,
+                  position: 'relative',
+                  color: '#fff',
+                  textShadow: '0 0 4px rgba(0, 0, 0, 0.6)',
+                }}
+              >
+                {this.state.score}
+              </div>
             </div>
-            ;
           </>
         ) : (
           <div className="Dropzone">Loading model...</div>
